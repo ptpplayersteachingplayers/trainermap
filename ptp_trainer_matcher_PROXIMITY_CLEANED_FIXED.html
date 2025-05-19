@@ -1,0 +1,667 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Find Your Soccer Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap');
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: #fff;
+      padding: 20px;
+      color: #222;
+      text-align: center;
+    }
+    #map {
+      height: 60vh;
+      width: 100%;
+      border-radius: 12px;
+      margin-top: 1rem;
+    }
+    .trainer-card {
+      background: #fef9e7;
+      border: 2px solid #f4c300;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      max-width: 600px;
+      margin: 1rem auto;
+    }
+    .social-proof {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #444;
+    }
+    .field-list, .trainer-list {
+      max-width: 600px;
+      margin: 2rem auto;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+    }
+    input, button {
+      padding: 0.5rem;
+      margin: 0.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    @media (max-width: 600px) {
+      input, button, select {
+        width: 95%;
+        font-size: 1.1rem;
+      }
+      .field-list, .trainer-list {
+        padding: 0 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h2>Find a Local Soccer Trainer & Field</h2>
+
+<div>
+  <input type="text" id="zipInput" placeholder="Enter your ZIP code">
+  <button onclick="useMyLocation()">Use My Location</button>
+  <select id="positionFilter">
+    <option value="">Any Position</option>
+    <option value="Defender">Defender</option>
+    <option value="Midfielder">Midfielder</option>
+    <option value="Striker">Striker</option>
+    <option value="Goalkeeper">Goalkeeper</option>
+  </select>
+  <button onclick="matchTrainer()">Find My Match</button>
+</div>
+
+<div id="map"></div>
+<div id="results"></div>
+
+<div class="field-list">
+  <h3>All Field Locations</h3>
+  <select id="fieldDropdown" onchange="highlightFieldOnMap(this)">
+    <option>Select a field to highlight it on the map</option>
+  </select>
+  <p id="fieldDistance"></p>
+</div>
+
+
+<div class="trainer-list">
+  <h3>Trainer Info</h3>
+  <p>Use the search above to match by ZIP or position.</p>
+</div>
+
+<script>
+let map;
+let fieldMarkers = [];
+
+const fields = [
+  {
+    "name": "Reservoir Park",
+    "zip": "17013",
+    "lat": 40.2695,
+    "lng": -76.8659,
+    "trainers": [
+      {
+        "name": "Cassidy Tannaddo",
+        "link": "https://ptptrainings.as.me/cassidytannaddoptp"
+      }
+    ]
+  },
+  {
+    "name": "Cherry Street Park",
+    "zip": "19401",
+    "lat": 40.1193,
+    "lng": -75.3439,
+    "trainers": [
+      {
+        "name": "Sebastian Perez",
+        "link": "https://ptptrainings.as.me/sebastianperezptp"
+      }
+    ]
+  },
+  {
+    "name": "James Baxter Park",
+    "zip": "19406",
+    "lat": 40.091,
+    "lng": -75.3705,
+    "trainers": [
+      {
+        "name": "James Fitzgerald",
+        "link": "https://ptptrainings.as.me/jamesfitzegeraldptp"
+      }
+    ]
+  },
+  {
+    "name": "Exton Park",
+    "zip": "19341",
+    "lat": 40.0433,
+    "lng": -75.6091,
+    "trainers": [
+      {
+        "name": "Taylor Coulter",
+        "link": "https://ptptrainings.as.me/taylorcoulterptp"
+      }
+    ]
+  },
+  {
+    "name": "Kerr Park",
+    "zip": "19335",
+    "lat": 40.0066,
+    "lng": -75.7055,
+    "trainers": [
+      {
+        "name": "Taylor Coulter",
+        "link": "https://ptptrainings.as.me/taylorcoulterptp"
+      },
+      {
+        "name": "Sebastian Perez",
+        "link": "https://ptptrainings.as.me/sebastianperezptp"
+      }
+    ]
+  },
+  {
+    "name": "Charles Martin Memorial Park",
+    "zip": "19341",
+    "lat": 40.0401,
+    "lng": -75.634,
+    "trainers": [
+      {
+        "name": "Ken Roby",
+        "link": "https://ptptrainings.as.me/kenrobyptp"
+      }
+    ]
+  },
+  {
+    "name": "Heuser Park",
+    "zip": "19406",
+    "lat": 40.1075,
+    "lng": -75.4086,
+    "trainers": [
+      {
+        "name": "Ken Roby",
+        "link": "https://ptptrainings.as.me/kenrobyptp"
+      }
+    ]
+  },
+  {
+    "name": "Heebner Park",
+    "zip": "19446",
+    "lat": 40.2015,
+    "lng": -75.3367,
+    "trainers": [
+      {
+        "name": "Hayden Shultz",
+        "link": "https://ptptrainings.as.me/haydenschultzptp"
+      }
+    ]
+  },
+  {
+    "name": "Waterworks Park",
+    "zip": "19426",
+    "lat": 40.1965,
+    "lng": -75.473,
+    "trainers": [
+      {
+        "name": "Taylor Coulter",
+        "link": "https://ptptrainings.as.me/taylorcoulterptp"
+      }
+    ]
+  },
+  {
+    "name": "Odorisio Park",
+    "zip": "19087",
+    "lat": 40.046,
+    "lng": -75.4115,
+    "trainers": [
+      {
+        "name": "Ella Jahromi",
+        "link": "https://ptptrainings.as.me/ellajahromiptp"
+      }
+    ]
+  },
+  {
+    "name": "BO Connor Park",
+    "zip": "19087",
+    "lat": 40.0439,
+    "lng": -75.4083,
+    "trainers": [
+      {
+        "name": "Ken Roby",
+        "link": "https://ptptrainings.as.me/kenrobyptp"
+      }
+    ]
+  },
+  {
+    "name": "Cedar Hollow Park",
+    "zip": "19355",
+    "lat": 40.0522,
+    "lng": -75.532,
+    "trainers": [
+      {
+        "name": "Cassidy Tannaddo",
+        "link": "https://ptptrainings.as.me/cassidytannaddoptp"
+      }
+    ]
+  },
+  {
+    "name": "LYA Target Field",
+    "zip": "19341",
+    "lat": 40.0529,
+    "lng": -75.6679,
+    "trainers": [
+      {
+        "name": "James Fitzgerald",
+        "link": "https://ptptrainings.as.me/jamesfitzegeraldptp"
+      }
+    ]
+  },
+  {
+    "name": "PW Victory Fields",
+    "zip": "19462",
+    "lat": 40.115,
+    "lng": -75.282,
+    "trainers": [
+      {
+        "name": "James Fitzgerald",
+        "link": "https://ptptrainings.as.me/jamesfitzegeraldptp"
+      }
+    ]
+  },
+  {
+    "name": "SCH Soccer Fields",
+    "zip": "19118",
+    "lat": 40.072,
+    "lng": -75.215,
+    "trainers": [
+      {
+        "name": "Lorenzo Avalos",
+        "link": "https://ptptrainings.as.me/lorenzoavalosptp"
+      }
+    ]
+  },
+  {
+    "name": "Vidas Field",
+    "zip": "19104",
+    "lat": 39.961,
+    "lng": -75.188,
+    "trainers": [
+      {
+        "name": "Sebastian Perez",
+        "link": "https://ptptrainings.as.me/sebastianperezptp"
+      }
+    ]
+  },
+  {
+    "name": "Decou Soccer Field",
+    "zip": "08002",
+    "lat": 39.926,
+    "lng": -75.001,
+    "trainers": [
+      {
+        "name": "Hayden Shultz",
+        "link": "https://ptptrainings.as.me/haydenschultzptp"
+      }
+    ]
+  },
+  {
+    "name": "Cherry Hill Soccer Lower Chapel Grass Field",
+    "zip": "08003",
+    "lat": 39.879,
+    "lng": -74.995,
+    "trainers": [
+      {
+        "name": "Hayden Shultz",
+        "link": "https://ptptrainings.as.me/haydenschultzptp"
+      }
+    ]
+  },
+  {
+    "name": "Voorhees Echelon Soccer Fields",
+    "zip": "08043",
+    "lat": 39.85,
+    "lng": -74.998,
+    "trainers": [
+      {
+        "name": "Hayden Shultz",
+        "link": "https://ptptrainings.as.me/haydenschultzptp"
+      }
+    ]
+  },
+  {
+    "name": "Mill Road Park",
+    "zip": "19355",
+    "lat": 40.036,
+    "lng": -75.527,
+    "trainers": [
+      {
+        "name": "Taylor Coulter",
+        "link": "https://ptptrainings.as.me/taylorcoulterptp"
+      }
+    ]
+  },
+  {
+    "name": "Wilson Farm Park",
+    "zip": "19301",
+    "lat": 40.0521,
+    "lng": -75.4456,
+    "trainers": [
+      {
+        "name": "Ella Jahromi",
+        "link": "https://ptptrainings.as.me/ellajahromiptp"
+      }
+    ]
+  },
+  {
+    "name": "Radnor Memorial Park",
+    "zip": "19087",
+    "lat": 40.0469,
+    "lng": -75.3626,
+    "trainers": [
+      {
+        "name": "Lorenzo Avalos",
+        "link": "https://ptptrainings.as.me/lorenzoavalosptp"
+      }
+    ]
+  },
+  {
+    "name": "Narberth Park",
+    "zip": "19072",
+    "lat": 40.0089,
+    "lng": -75.2642,
+    "trainers": [
+      {
+        "name": "Cassidy Tannaddo",
+        "link": "https://ptptrainings.as.me/cassidytannaddoptp"
+      }
+    ]
+  },
+  {
+    "name": "South Ardmore Park",
+    "zip": "19096",
+    "lat": 40.0103,
+    "lng": -75.2824,
+    "trainers": [
+      {
+        "name": "Johnathan Evans",
+        "link": "https://ptptrainings.as.me/johnathanevansptp"
+      }
+    ]
+  },
+  {
+    "name": "Kenilworth Park",
+    "zip": "19406",
+    "lat": 40.0991,
+    "lng": -75.3874,
+    "trainers": [
+      {
+        "name": "James Fitzgerald",
+        "link": "https://ptptrainings.as.me/jamesfitzegeraldptp"
+      }
+    ]
+  },
+  {
+    "name": "General Wayne Park",
+    "zip": "19087",
+    "lat": 40.053,
+    "lng": -75.4119,
+    "trainers": [
+      {
+        "name": "Lorenzo Avalos",
+        "link": "https://ptptrainings.as.me/lorenzoavalosptp"
+      }
+    ]
+  },
+  {
+    "name": "Ashbridge Park",
+    "zip": "19010",
+    "lat": 40.0211,
+    "lng": -75.3248,
+    "trainers": [
+      {
+        "name": "Sebastian Perez",
+        "link": "https://ptptrainings.as.me/sebastianperezptp"
+      }
+    ]
+  },
+  {
+    "name": "James John Audubon Center",
+    "zip": "19403",
+    "lat": 40.1278,
+    "lng": -75.4407,
+    "trainers": [
+      {
+        "name": "Sebastian Cutler",
+        "link": "https://ptptrainings.as.me/sebastiancutlerptp"
+      }
+    ]
+  },
+  {
+    "name": "Charles D. Martin Park",
+    "zip": "19341",
+    "lat": 40.039,
+    "lng": -75.6343,
+    "trainers": [
+      {
+        "name": "Ken Roby",
+        "link": "https://ptptrainings.as.me/kenrobyptp"
+      }
+    ]
+  },
+  {
+    "name": "Wayne Elementary Fields",
+    "zip": "19087",
+    "lat": 40.0455,
+    "lng": -75.3917,
+    "trainers": [
+      {
+        "name": "Lorenzo Avalos",
+        "link": "https://ptptrainings.as.me/lorenzoavalosptp"
+      }
+    ]
+  }
+];
+const trainers = {
+  "Cassidy Tannaddo": {
+    "zip": "17013",
+    "booking": "https://ptptrainings.as.me/cassidytannaddoptp",
+    "position": "Midfielder"
+  },
+  "Sebastian Perez": {
+    "zip": "19401",
+    "booking": "https://ptptrainings.as.me/sebastianperezptp",
+    "position": "Midfielder"
+  },
+  "James Fitzgerald": {
+    "zip": "19406",
+    "booking": "https://ptptrainings.as.me/jamesfitzegeraldptp",
+    "position": "Midfielder"
+  },
+  "Taylor Coulter": {
+    "zip": "19341",
+    "booking": "https://ptptrainings.as.me/taylorcoulterptp",
+    "position": "Midfielder"
+  },
+  "Ken Roby": {
+    "zip": "19341",
+    "booking": "https://ptptrainings.as.me/kenrobyptp",
+    "position": "Midfielder"
+  },
+  "Hayden Shultz": {
+    "zip": "19446",
+    "booking": "https://ptptrainings.as.me/haydenschultzptp",
+    "position": "Midfielder"
+  },
+  "Ella Jahromi": {
+    "zip": "19087",
+    "booking": "https://ptptrainings.as.me/ellajahromiptp",
+    "position": "Midfielder"
+  },
+  "Lorenzo Avalos": {
+    "zip": "19118",
+    "booking": "https://ptptrainings.as.me/lorenzoavalosptp",
+    "position": "Midfielder"
+  },
+  "Johnathan Evans": {
+    "zip": "19096",
+    "booking": "https://ptptrainings.as.me/johnathanevansptp",
+    "position": "Midfielder"
+  },
+  "Sebastian Cutler": {
+    "zip": "19403",
+    "booking": "https://ptptrainings.as.me/sebastiancutlerptp",
+    "position": "Midfielder"
+  }
+};
+
+function initMapWrapper() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 10,
+    center: { lat: 40.05, lng: -75.35 }
+  });
+
+  fields.forEach(field => {
+    const marker = new google.maps.Marker({
+      map,
+      position: { lat: field.lat, lng: field.lng },
+      title: field.name
+    });
+    
+    const info = new google.maps.InfoWindow({
+      content: `<strong>${field.name}</strong><br>
+        <em>${field.address}</em><br><br>
+        <strong>Trainers at this field:</strong><br>
+        ${field.trainers.map(t => `
+          <div style='margin: 4px 0'>
+            <a href='${t.link}' target='_blank' style='color:#000;text-decoration:underline;'>${t.name}</a>
+          </div>
+        `).join("")}`
+    });
+
+      content: `<strong>${field.name}</strong><br>${field.address}<br>Trainers:<br>${field.trainers.map(t => `<a href='${t.link}' target='_blank'>${t.name}</a>`).join("<br>")}`
+    });
+    marker.addListener("click", () => info.open(map, marker));
+    fieldMarkers.push({ name: field.name, marker });
+    addToDropdown(field.name, "fieldDropdown");
+  });
+
+  Object.keys(trainers).forEach(name => {
+    addToDropdown(name, "trainerDropdown");
+  });
+}
+
+function addToDropdown(name, dropdownId) {
+  const opt = document.createElement("option");
+  opt.value = name;
+  opt.textContent = name;
+  document.getElementById(dropdownId).appendChild(opt);
+}
+
+function highlightFieldOnMap(sel) {
+  const name = sel.value;
+  const match = fieldMarkers.find(f => f.name === name);
+  if (match) {
+    map.setZoom(12);
+    map.panTo(match.marker.getPosition());
+    google.maps.event.trigger(match.marker, "click");
+  }
+}
+
+function showTrainerFields(sel) {
+  const trainerName = sel.value;
+  const matchingFields = fields.filter(f =>
+    f.trainers.some(t => t.name === trainerName)
+  ).map(f => f.name);
+  document.getElementById("trainerFields").textContent =
+    `${trainerName} operates at: ${matchingFields.join(", ") || "No fields found"}`;
+}
+
+function matchTrainer() {
+  const zip = document.getElementById("zipInput").value.trim();
+  const position = document.getElementById("positionFilter").value;
+  if (!zip && !position) return alert("Enter a ZIP or select a position");
+
+  let matched = null;
+  let minDiff = 99999;
+  for (const name in trainers) {
+    const trainer = trainers[name];
+    if (position && trainer.position !== position) continue;
+    if (zip) {
+      const diff = Math.abs(parseInt(zip) - parseInt(trainer.zip));
+      if (diff < minDiff) {
+        minDiff = diff;
+        matched = { name, ...trainer };
+      }
+    } else {
+      matched = { name, ...trainer };
+      break;
+    }
+  }
+
+  if (matched) {
+    const field = fields.find(f => f.trainers.some(t => t.name === matched.name));
+    const address = field ? field.address : "Not Available";
+    document.getElementById("results").innerHTML = `
+      <div class="trainer-card">
+        <h3>${matched.name}</h3>
+        <p><strong>Position:</strong> ${matched.position}</p>
+        <p><strong>Trainer ZIP:</strong> ${matched.zip}</p>
+        <p><strong>Field:</strong> ${field?.name || "N/A"}</p>
+        <p><strong>Address:</strong> ${address}</p>
+        <a href="${matched.booking}" target="_blank">
+          <button style="background:#f4c300;padding:0.7rem 1.2rem;border:none;border-radius:8px;font-weight:bold;">Book Session</button>
+        </a>
+        <div class="social-proof">⭐ 5.0 from 100+ Families • Trusted by College & Pro Athletes</div>
+      </div>
+    `;
+  } else {
+    alert("No matching trainer found nearby.");
+  }
+}
+
+function useMyLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (res, status) => {
+      if (status === "OK") {
+        const zipObj = res[0].address_components.find(c => c.types.includes("postal_code"));
+        if (zipObj) {
+          document.getElementById("zipInput").value = zipObj.long_name;
+          matchTrainer();
+        }
+      }
+    });
+  });
+}
+</script>
+
+<script>
+  function initMapWrapper() {
+    if (typeof initMapWrapper === 'function') {
+      initMapWrapper();
+    }
+  };
+</script>
+
+<script>
+  window.initMap = function() {
+    if (typeof initMapWrapper === 'function') {
+      initMapWrapper();
+    }
+  };
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyASLf8mjb8iEbVo99DnaaPzXGlu5jhXrZE&callback=initMap"></script>
+
+
+</body>
+</html>
