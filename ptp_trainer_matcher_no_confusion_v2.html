@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find a Soccer Trainer Near You</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: 'Rubik', sans-serif; margin: 0; padding: 1rem; background: #fff; color: #111; }
+    h2 { text-align: center; margin: 0.5rem auto 1rem; font-size: 1.5rem; }
+    #map { height: 50vh; width: 100%; border-radius: 12px; margin: 1rem 0; }
+
+    input, select, button {
+      width: 95%; max-width: 500px; padding: 0.6rem;
+      margin: 0.4rem auto; display: block; font-size: 1rem;
+      border-radius: 8px; border: 1px solid #ccc;
+    }
+
+    .trainer-card {
+      background: #fef9e7; border: 2px solid #f4c300; padding: 1rem;
+      border-radius: 12px; max-width: 600px; margin: 1rem auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;
+    }
+
+    .trainer-card img {
+      width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 0.5rem;
+    }
+
+    .field-info, .bio-link, .map-link, .cta-btn {
+      text-align: center; margin: 0.6rem 0;
+    }
+
+    .map-link a, .bio-link a, .cta-btn a {
+      display: inline-block; text-decoration: none; padding: 0.5rem 1rem;
+      border-radius: 6px; background: #eee; color: #333; font-weight: bold;
+    }
+
+    .cta-btn a {
+      background: #f4c300; color: #000;
+    }
+
+    .field-preview img {
+      max-width: 100%; border-radius: 10px; margin-top: 0.5rem;
+    }
+
+    .lead-capture {
+      text-align: center; margin: 2rem 0;
+    }
+
+    .lead-capture input[type=email] {
+      width: 90%; max-width: 300px;
+      padding: 0.6rem; margin-bottom: 0.5rem;
+      border-radius: 6px; border: 1px solid #ccc;
+    }
+
+    .lead-capture button {
+      padding: 0.5rem 1rem; background: #f4c300;
+      border: none; font-weight: bold; border-radius: 6px; cursor: pointer;
+    }
+
+    .sticky-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #f4c300; padding: 0.8rem;
+      text-align: center; font-weight: bold; font-size: 1.1rem;
+      z-index: 999;
+    }
+
+    .sticky-footer a {
+      text-decoration: none; color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h2>Matched with Sebastian Perez near Cherry Street Park</h2>
+  <div id="map"></div>
+
+  <div class="field-info">
+    <p><strong>Field:</strong> Cherry Street Park (ZIP: 19401)</p>
+    <p>📍 40.7 miles away — ~47 mins drive</p>
+    <div class="map-link"><a href="https://www.google.com/maps/dir/?api=1&destination=40.1193,-75.3439" target="_blank">🧭 Open in Google Maps</a></div>
+  </div>
+
+  <div class="field-preview">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Soccer_field_layout.svg/1200px-Soccer_field_layout.svg.png" alt="Cherry Street Park">
+  </div>
+
+  <div class="trainer-card">
+    <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Sebastian Perez">
+    <h3>Sebastian Perez</h3>
+    <p><strong>Position:</strong> Striker</p>
+    <p><strong>Experience:</strong> D1 Forward – 4 Years Coaching</p>
+    <p><strong>Availability:</strong> Weeknights + Saturday mornings</p>
+    <div class="cta-btn"><a href="https://ptptrainings.as.me/sebastianperezptp" target="_blank">✅ Book with Sebastian</a></div>
+    <div class="bio-link"><a href="/trainer/sebastian-perez">🔍 View Full Bio</a></div>
+  </div>
+
+  <div class="lead-capture">
+    <h4📩 Want this info emailed to you?</h4>
+    <input type="email" placeholder="you@example.com" />
+    <button onclick="alert('We’ll send your trainer + field info!')">Send My Match</button>
+  </div>
+
+  <div class="sticky-footer">
+    <a href="https://ptptrainings.as.me/sebastianperezptp" target="_blank">Book Now with Sebastian — Spots Filling Fast!</a>
+  </div>
+
+  <script async defer loading="async"
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyASLf8mjb8iEbVo99DnaaPzXGlu5jhXrZE&callback=initMap">
+  </script>
+  <script>
+    function initMap() {
+      const map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 40.1193, lng: -75.3439 },
+        zoom: 10
+      });
+      const marker = new google.maps.Marker({
+        map,
+        position: { lat: 40.1193, lng: -75.3439 },
+        title: "Cherry Street Park"
+      });
+    }
+  </script>
+</body>
+</html>
