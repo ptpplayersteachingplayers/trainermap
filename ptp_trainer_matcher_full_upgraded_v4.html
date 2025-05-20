@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find Your Soccer Trainer | PTP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: 'Rubik', sans-serif; margin: 0; padding: 1rem; background: #fff; color: #111; }
+    h2, h3 { text-align: center; }
+    #map { height: 50vh; width: 100%; border-radius: 12px; margin: 1rem 0; }
+    input, select, button {
+      width: 95%; max-width: 500px; padding: 0.6rem;
+      margin: 0.4rem auto; display: block; font-size: 1rem;
+      border-radius: 8px; border: 1px solid #ccc;
+    }
+    .trainer-card {
+      background: #fef9e7; border: 2px solid #f4c300; padding: 1rem;
+      border-radius: 12px; max-width: 600px; margin: 1rem auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1); text-align: center;
+    }
+    .trainer-card img {
+      width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+    }
+    .field-list { max-width: 600px; margin: 2rem auto; }
+    .field-list ul { padding-left: 1.2rem; }
+    .sticky-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #f4c300; padding: 0.8rem; text-align: center;
+      font-weight: bold; font-size: 1.1rem; z-index: 999;
+    }
+    .sticky-footer a { text-decoration: none; color: #000; }
+  </style>
+</head>
+<body>
+  <h2>Find a PTP Soccer Trainer Near You</h2>
+  <button onclick="useMyLocation()">📍 Use My Location</button>
+  <input type="text" id="zipInput" placeholder="Enter your ZIP code" />
+  <select id="positionFilter">
+    <option value="">All Positions</option>
+    <option value="Striker">Striker</option>
+    <option value="Midfielder">Midfielder</option>
+    <option value="Defender">Defender</option>
+    <option value="Goalkeeper">Goalkeeper</option>
+  </select>
+  <button onclick="matchTrainer()">Find My Trainer</button>
+
+  <div id="map"></div>
+  <div id="results"></div>
+
+  <h3>🗺️ Fields in the PTP Network</h3>
+  <div class="field-list">
+    <ul>
+      <li>Cherry Street Park – ZIP 19401</li>
+      <li>Exton Park – ZIP 19341</li>
+      <li>Heebner Park – ZIP 19087</li>
+    </ul>
+  </div>
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyASLf8mjb8iEbVo99DnaaPzXGlu5jhXrZE&callback=initMap" async defer></script>
+  <script>
+    const trainers = [
+      { name: "Sebastian Perez", zip: "19080", position: "Striker", booking: "https://ptptrainings.as.me/sebastianperezptp", bio: "/trainer/sebastian-perez", availability: "Weeknights + Sat AM", img: "https://randomuser.me/api/portraits/men/32.jpg" },
+      { name: "Taylor Coulter", zip: "19335", position: "Midfielder", booking: "https://ptptrainings.as.me/taylorcoulterptp", bio: "/trainer/taylor-coulter", availability: "Evenings Only", img: "https://randomuser.me/api/portraits/women/44.jpg" },
+      { name: "Lorenzo Avalos", zip: "19063", position: "Defender", booking: "https://ptptrainings.as.me/lorenzoavalosptp", bio: "/trainer/lorenzo-avalos", availability: "Weekends Only", img: "https://randomuser.me/api/portraits/men/47.jpg" }
+    ];
+
+    const fields = [
+      { name: "Cherry Street Park", zip: "19401", lat: 40.1193, lng: -75.3439, trainers: ["Sebastian Perez"] },
+      { name: "Exton Park", zip: "19341", lat: 40.0433, lng: -75.6091, trainers: ["Taylor Coulter"] },
+      { name: "Heebner Park", zip: "19087", lat: 40.115, lng: -75.424, trainers: ["Lorenzo Avalos"] }
+    ];
+
+    let map, geocoder, directionsService, directionsRenderer;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 40.05, lng: -75.35 }, zoom: 9
+      });
+      geocoder = new google.maps.Geocoder();
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: false });
+      directionsRenderer.setMap(map);
+    }
+
+    function useMyLocation() {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        geocoder.geocode({ location: { lat, lng } }, (res, status) => {
+          if (status === "OK") {
+            const zipObj = res[0].address_components.find(c => c.types.includes("postal_code"));
+            if (zipObj) document.getElementById("zipInput").value = zipObj.long_name;
+            matchTrainer();
+          }
+        });
+      });
+    }
+
+    function matchTrainer() {
+      const userZip = document.getElementById("zipInput").value.trim();
+      const positionFilter = document.getElementById("positionFilter").value;
+      if (!userZip) return alert("Please enter your ZIP code.");
+
+      let bestMatch = null;
+      let closest = 9999;
+      for (const trainer of trainers) {
+        if (positionFilter && trainer.position !== positionFilter) continue;
+        const diff = Math.abs(parseInt(userZip) - parseInt(trainer.zip));
+        if (diff < closest) {
+          closest = diff;
+          bestMatch = trainer;
+        }
+      }
+
+      const field = fields.find(f => f.trainers.includes(bestMatch.name));
+      const destination = new google.maps.LatLng(field.lat, field.lng);
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const origin = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+          directionsService.route({
+            origin: origin, destination: destination, travelMode: 'DRIVING'
+          }, (result, status) => {
+            if (status === 'OK') directionsRenderer.setDirections(result);
+          });
+
+          const service = new google.maps.DistanceMatrixService();
+          service.getDistanceMatrix({
+            origins: [origin], destinations: [destination], travelMode: 'DRIVING'
+          }, (res, stat) => {
+            if (stat === 'OK') {
+              const dist = res.rows[0].elements[0].distance.text;
+              const time = res.rows[0].elements[0].duration.text;
+              const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${field.lat},${field.lng}`;
+              document.getElementById("results").innerHTML = `
+                <div class="field-info">
+                  <p><strong>Recommended Field:</strong> ${field.name} (${field.zip})</p>
+                  <p>📍 ${dist} – ~${time} drive</p>
+                  <div><a href="${mapsUrl}" target="_blank">🧭 Open in Google Maps</a></div>
+                </div>
+                <div class="trainer-card">
+                  <img src="${bestMatch.img}" alt="${bestMatch.name}" />
+                  <h3>${bestMatch.name}</h3>
+                  <p><strong>Position:</strong> ${bestMatch.position}</p>
+                  <p><strong>Availability:</strong> ${bestMatch.availability}</p>
+                  <div><a href="${bestMatch.booking}" target="_blank">✅ Book Now</a></div>
+                  <div><a href="${bestMatch.bio}">🔍 View Trainer Bio</a></div>
+                </div>
+                <div style="text-align:center;"><button onclick="matchTrainer()">🔁 Find Another Trainer</button></div>
+              `;
+            }
+          });
+        });
+      }
+    }
+  </script>
+</body>
+</html>
