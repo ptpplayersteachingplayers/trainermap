@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Find a PTP Soccer Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Rubik', sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background: #fff;
+      color: #111;
+    }
+    h2, h3 {
+      text-align: center;
+      font-weight: 700;
+    }
+    #map {
+      height: 50vh;
+      width: 100%;
+      border-radius: 12px;
+      margin: 1rem 0;
+    }
+    input, select, button {
+      width: 95%;
+      max-width: 500px;
+      padding: 0.6rem;
+      margin: 0.4rem auto;
+      display: block;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #f4c300;
+      font-weight: bold;
+      cursor: pointer;
+      border: 2px solid #000;
+    }
+    .trainer-card {
+      background: #fef9e7;
+      border: 2px solid #f4c300;
+      padding: 1rem;
+      border-radius: 16px;
+      max-width: 600px;
+      margin: 1rem auto;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .trainer-card img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .results-block {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .results-block p {
+      font-size: 1.1rem;
+    }
+    .button-link {
+      display: inline-block;
+      margin: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: 2px solid #000;
+      border-radius: 8px;
+      background: #f4c300;
+      font-weight: bold;
+      text-decoration: none;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h2>Find a PTP Soccer Trainer Near You</h2>
+  <button onclick="useMyLocation()">📍 Use My Location</button>
+  <input type="text" id="zipInput" placeholder="Enter your ZIP code" />
+  <select id="positionFilter">
+    <option value="">All Positions</option>
+    <option value="Striker">Striker</option>
+    <option value="Midfielder">Midfielder</option>
+    <option value="Defender">Defender</option>
+    <option value="Goalkeeper">Goalkeeper</option>
+  </select>
+  <button onclick="matchTrainer()">Find My Trainer</button>
+
+  <div id="map"></div>
+  <div id="results"></div>
+
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyASLf8mjb8iEbVo99DnaaPzXGlu5jhXrZE&callback=initMap" async defer></script>
+  <script>
+    const trainers = [
+      {
+        name: "Cassidy Tannaddo",
+        zip: "19131",
+        position: "Defender",
+        booking: "https://ptptrainings.as.me/cassidytannaddoptp",
+        bio: "/trainer/cassidy-tannaddo",
+        img: "https://randomuser.me/api/portraits/women/65.jpg",
+        summary: "Cassidy brings international experience to private training sessions, showcasing strong tactical awareness and composure on the ball. Former Hawks defender with professional experience, specializing in defensive techniques and building confident play from the back."
+      },
+      {
+        name: "Johnathan Evans",
+        zip: "19426",
+        position: "Goalkeeper",
+        booking: "https://ptptrainings.as.me/johnathanevansptp",
+        bio: "/trainer/johnathan-evans",
+        img: "https://randomuser.me/api/portraits/men/77.jpg",
+        summary: "Jonathan brings collegiate experience from Penn State University (NCAA Division I) to his private goalkeeper training sessions. A product of the Philadelphia Union Academy from Collegeville, PA, he is known for his quick reflexes and commanding presence in the penalty area."
+      },
+      {
+        name: "James Fitzgerald",
+        zip: "19104",
+        position: "Defender",
+        booking: "https://ptptrainings.as.me/jamesfitzegeraldptp",
+        bio: "/trainer/james-fitzgerald",
+        img: "https://randomuser.me/api/portraits/men/63.jpg",
+        summary: "A versatile player with a strong presence in both defense and midfield, James brings valuable experience from FC Delco and William Penn Charter School. His adaptability and tactical awareness make him an asset in multiple formations."
+      },
+      {
+        name: "Lorenzo Avalos",
+        zip: "19063",
+        position: "Defender",
+        booking: "https://ptptrainings.as.me/lorenzoavalosptp",
+        bio: "/trainer/lorenzo-avalos",
+        img: "https://randomuser.me/api/portraits/men/47.jpg",
+        summary: "Lorenzo, a former captain of the San Jose Earthquakes MLS Next team, is recognized for his leadership and ability to build play from the back. His composure on the ball and organizational skills strengthen Villanova's defensive line."
+      },
+      {
+        name: "Sebastian Perez",
+        zip: "19080",
+        position: "Striker",
+        booking: "https://ptptrainings.as.me/sebastianperezptp",
+        bio: "/trainer/sebastian-perez",
+        img: "https://randomuser.me/api/portraits/men/32.jpg",
+        summary: "An All-American and Gatorade Player of the Year nominee, Sebastian is celebrated for his playmaking abilities and vision on the field. His technical skill and creative passing have already made him a standout performer at Drexel."
+      },
+      {
+        name: "Sebastian Cutler",
+        zip: "19087",
+        position: "Goalkeeper",
+        booking: "https://ptptrainings.as.me/sebastiancutlerptp",
+        bio: "/trainer/sebastian-cutler",
+        img: "https://randomuser.me/api/portraits/men/61.jpg",
+        summary: "Sebastian transferred from Charlotte, where he recorded two shutouts. He's also been called up to the Puerto Rico National Team, bringing international experience to Villanova's goalkeeping unit."
+      },
+      {
+        name: "Ken Roby",
+        zip: "19083",
+        position: "Striker",
+        booking: "https://ptptrainings.as.me/kenrobyptp",
+        bio: "/trainer/ken-roby",
+        img: "https://randomuser.me/api/portraits/men/11.jpg",
+        summary: "Ken has made significant contributions to his team, including a hat-trick performance and earning SUNYAC Athlete of the Week honors. His scoring ability and experience provide leadership to the New Paltz attack in his final collegiate season."
+      }
+    ];
+
+    const fields = [
+      { name: "Cherry Street Park", zip: "19401", lat: 40.1193, lng: -75.3439, trainers: ["Sebastian Perez"] },
+      { name: "Heebner Park", zip: "19087", lat: 40.115, lng: -75.424, trainers: ["Sebastian Cutler"] }
+    ];
+
+    let map, geocoder, directionsService, directionsRenderer;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 40.05, lng: -75.35 }, zoom: 9
+      });
+      geocoder = new google.maps.Geocoder();
+      directionsService = new google.maps.DirectionsService();
+      directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: false });
+      directionsRenderer.setMap(map);
+    }
+
+    function useMyLocation() {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        geocoder.geocode({ location: { lat, lng } }, (res, status) => {
+          if (status === "OK") {
+            const zipObj = res[0].address_components.find(c => c.types.includes("postal_code"));
+            if (zipObj) document.getElementById("zipInput").value = zipObj.long_name;
+            matchTrainer();
+          }
+        });
+      });
+    }
+
+    function matchTrainer() {
+      const userZip = document.getElementById("zipInput").value.trim();
+      const positionFilter = document.getElementById("positionFilter").value;
+      if (!userZip) return alert("Please enter your ZIP code.");
+
+      let bestMatch = null;
+      let closest = 9999;
+      for (const trainer of trainers) {
+        if (positionFilter && trainer.position !== positionFilter) continue;
+        const diff = Math.abs(parseInt(userZip) - parseInt(trainer.zip));
+        if (diff < closest) {
+          closest = diff;
+          bestMatch = trainer;
+        }
+      }
+
+      const field = fields.find(f => f.trainers.includes(bestMatch.name));
+      const destination = new google.maps.LatLng(field.lat, field.lng);
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const origin = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
+          directionsService.route({
+            origin: origin, destination: destination, travelMode: 'DRIVING'
+          }, (result, status) => {
+            if (status === 'OK') directionsRenderer.setDirections(result);
+          });
+
+          const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${field.lat},${field.lng}`;
+
+          document.getElementById("results").innerHTML = `
+            <div class="results-block">
+              <p><strong>Recommended Field:</strong> ${field.name} (${field.zip})</p>
+              <p><a class="button-link" href="${mapsUrl}" target="_blank">🧭 Open in Google Maps</a></p>
+            </div>
+            <div class="trainer-card">
+              <img src="${bestMatch.img}" alt="${bestMatch.name}" />
+              <h3>${bestMatch.name}</h3>
+              <p><strong>ZIP Code:</strong> ${bestMatch.zip}</p>
+              <p style="font-size: 0.95rem; line-height: 1.4;">${bestMatch.summary}</p>
+              <div>
+                <a class="button-link" href="${bestMatch.booking}" target="_blank">✅ Book Now</a>
+                <a class="button-link" href="${bestMatch.bio}" target="_blank">🔍 View Bio</a>
+              </div>
+              <div style="margin-top: 1rem;">
+                <button onclick="matchTrainer()">🔁 Find Another Trainer</button>
+              </div>
+            </div>`;
+        });
+      }
+    }
+  </script>
+</body>
+</html>
